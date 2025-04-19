@@ -5,14 +5,74 @@
     <title>Ekalaivan Chidambaram Blogs - {{ .Params.title }}</title>
 
     <meta key="description" content="{{ .Params.description }}" />
-    {{ with .Params.keywords }}<meta name="keywords" content="{{ delimit . "," }}" />{{ end }}
-  
+    {{ with .Params.keywords }}<meta name="keywords" content="{{ delimit . " ," }}" />{{ end }}
+    <meta name="author" content="Ekalaivan Chidambaram">
+    <meta name="robots" content="index, follow">
+
     <meta property="og:title" content="Ekalaivan Chidambaram Blogs - {{ .Params.title }}">
     <meta property="og:description" content="{{ .Params.description }}">
     <meta property="og:url" content="https://blogs.ekalaivan.net/{{ .Params.url }}">
-    <meta property="og:type" content="blog">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="https://blogs.ekalaivan.net/images/icon.jpg">
 
-    <link rel="icon" type="text/image" href="/images/icon.jpg" />
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ .Title }}">
+    <meta name="twitter:description" content="{{ .Params.description }}">
+    <meta name="twitter:image" content="https://blogs.ekalaivan.net/images/icon.jpg">
+
+    <link rel="canonical" href="https://blogs.ekalaivan.net/{{ .Params.url }}">
+
+    <link rel="icon" type="text/image" href="{{ .Params.icon }}" />
+
+    <!-- Link to robots.txt -->
+    <link rel="robots" href="/robots.txt">
+
+    <!-- Link to sitemap -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": "https://blogs.ekalaivan.net{{ .Permalink }}"
+            },
+            "headline": "{{ .Title }}",
+            "description": "{{ .Params.description }}",
+            "image": "https://blogs.ekalaivan.net/images/icon.jpg",
+            "author": {
+                "@type": "Person",
+                "name": "Ekalaivan Chidambaram"
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Ekalaivan Chidambaram Blogs",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://blogs.ekalaivan.net/images/icon.jpg"
+                }
+            },
+            "datePublished": "{{ .Date }}",
+            "dateModified": "{{ .Lastmod }}"
+        }
+    </script>
+
+    <!-- Structured Data for Subdomain Relationship -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": "https://blogs.ekalaivan.net",
+        "name": "Ekalaivan Chidambaram Blogs",
+        "publisher": {
+            "@type": "Organization",
+            "name": "Ekalaivan Chidambaram",
+            "url": "https://ekalaivan.net"
+        }
+    }
+    </script>
 
     <link rel="stylesheet" type="text/css"
         href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" async />
