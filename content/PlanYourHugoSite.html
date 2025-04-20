@@ -1,0 +1,280 @@
+---
+title: "How to plan your Hugo site with multiple pages: A beginner's introduction"
+description: "A step-by-step guide for planning a Hugo site with multiple pages: A beginner's introduction. After using the getting started guide from Hugo, this is a way or first step to continue."
+author: "Ekalaivan Chidambaram"
+slug: "plan-your-hugo-site-beginners-idea"
+url: "plan-your-hugo-site-beginners-idea"
+icon: "/images/icon.jpg"
+aliases:
+- "plan-your-hugo-site-beginners-idea.html"
+keywords:
+- "Hugo"
+- "Multiple Pages"
+- "Beginner"
+- "Hugo basics"
+tags:
+- "Hugo"
+- "Website"
+- "Multiple Pages"
+categories:
+- "Website Development"
+type: "post"
+date: 2023-08-29T22:02:39+05:30
+lastmod: 2024-05-25T00:00:00+00:00
+draft: false
+---
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a class="text-reset" href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Plan Your Hugo Site: A Beginner's Idea</li>
+    </ol>
+</nav>
+
+<div class="page-body">
+    <h2 class="mt-3">Introduction</h2>
+    <p>
+        Creating a Hugo site from scratch with multiple pages can feel overwhelming at first, but with a clear plan and
+        understanding of its structure, it becomes much easier. This guide is designed to help beginners get started
+        with Hugo, plan their site, and manage multiple pages effectively.
+    </p>
+
+    <h3>Before Jumping In</h3>
+    <p>
+        Make sure you have followed the getting started guide from Hugo. This guide is not a replacement for the official documentation or guide for a basic hello world page.
+        It is a step-by-step guide to help you plan your site and manage multiple pages effectively.
+    </p>
+
+    <h3>What I Found Complex After "Getting Started"</h3>
+    <p>
+        When I started with Hugo, the most challenging part was understanding how to organize content and manage pages
+        effectively. Here’s what I learned:
+    </p>
+
+    <h4>Plan Your Site Structure</h4>
+    <p>
+        Before you start adding content, take a moment to plan how your site will be organized. A well-structured site
+        is easier to maintain and expand. Here’s a simple plan:
+    </p>
+    <ul>
+        <li>
+            <strong>Content Folder</strong>: This is where your individual pages will go. Each file represents
+            a page on your site. like post 1, post 2, etc.,
+        </li>
+        <li>
+            <strong>Layouts Folder</strong>: This folder contains templates that define how your pages are rendered. The
+            entry point of your site's dynamic representation. This is the place where we plan how we are going to
+            maintain or chunk our one HTML document into smaller units with the help of partials and the
+            <code>baseof</code> file.
+            <ul>
+                <li>
+                    <strong>Partials</strong>: These are reusable components like headers, footers, and scripts or the
+                    individual units from the whole HTML document. The individual units of our one page can be
+                    maintained and managed with ease.
+                </li>
+                <li>
+                    <strong>Default Layouts</strong>: Use <code>_default/baseof.html</code> as the base template to
+                    combine partials into a full HTML document. The split individual partials are directly used here to
+                    combine them to represent a whole HTML document.
+                </li>
+            </ul>
+        </li>
+        <li>
+            <strong>Static Folder</strong>: This is for static files like CSS, images, or JavaScript that don’t require
+            processing, like in any other web application.
+        </li>
+        <li>
+            <strong>Resources Folder</strong>: Use this for dynamic assets like SCSS or images that need processing.
+        </li>
+    </ul>
+
+    <div>
+        Note: Hugo will not serve your site like PHP, ASP.NET Core, or any other server-side language. It will just
+        generate static files, and you can use any server to serve the static files. Each individual page will be a
+        generated static HTML document. The advantage of using Hugo is that you can
+        handle page-specific matters without setting layouts and common HTML elements everywhere.
+        Kind of master page child page while building not in running state.
+    </div>
+
+    <hr>
+
+    <h5>Sample File Structure</h5>
+    <p>Here’s a minimal file structure to get started:</p>
+    <pre class="rounded"><code class="language-cs">.
+├── content/
+│   ├── _index.html
+│   ├── about.md
+│   └── contact.md
+├── layouts/
+│   ├── _default/
+│   │   └── baseof.html
+│   └── partials/
+│       ├── footer.html
+│       ├── head.html
+│       ├── header.html
+│       └── scripts.html
+└── static/
+    ├── css/
+    │   └── site.css
+    └── images/
+        └── icon.jpg</code></pre>
+
+    <h5>1. Content Folder</h5>
+    <p>
+        The <code>content</code> folder is where all your site’s pages are stored. Each file in this folder
+        corresponds to a page on your site. For example:
+    </p>
+    <ul>
+        <li><code>about.md</code>: Represents the "About" page.</li>
+        <li><code>contact.md</code>: Represents the "Contact" page.</li>
+    </ul>
+    <p>
+        You can organize the <code>content</code> folder into subdirectories for better management. For example:
+    </p>
+    <pre class="rounded"><code class="language-cs">.
+└── content/
+    ├── blog/
+    │   ├── post1.md
+    │   └── post2.md
+    └── projects/
+        ├── project1.md
+        └── project2.md</code></pre>
+
+    <p>In this structure:</p>
+    <ul>
+        <li><code>blog/post1.md</code> will be accessible at <code>/blog/post1/</code>.</li>
+        <li><code>projects/project1.md</code> will be accessible at <code>/projects/project1/</code>.</li>
+    </ul>
+    <p>
+        Each file in the <code>content</code> folder should have front matter at the top, which defines metadata for the
+        page. For example:
+    </p>
+    <pre class="rounded"><code class="language-cs">title: "About Me"
+description: "Learn more about me."
+date: 2023-10-01</code></pre>
+
+    <h5>2. Layouts Folder</h5>
+
+    <p>
+        The <code>layouts</code> folder defines how your content is displayed. It contains templates that Hugo uses to
+        render your pages. Here’s a breakdown:
+    </p>
+    <ul>
+        <li>
+            <strong>_default/baseof.html</strong>: This is the base template that acts as the skeleton for all pages. It
+            typically includes the <code>&lt;head&gt;</code> section, header, footer, and placeholders for content.
+        </li>
+        <li>
+            <strong>Partials</strong>: These are reusable components that can be included in other templates. For
+            example:
+            <ul>
+                <li>
+                    <code>partials/head.html</code>: Contains the <code>&lt;head&gt;</code> section with metadata and
+                    styles.
+                </li>
+                <li><code>partials/header.html</code>: Contains the navigation menu.</li>
+                <li><code>partials/footer.html</code>: Contains the footer section.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>Page-Specific Layouts</strong>: You can create custom layouts for specific types of pages. For
+            example:
+            <ul>
+                <li><code>layouts/blog/single.html</code>: Defines how individual blog posts are displayed.</li>
+                <li><code>layouts/projects/list.html</code>: Defines how a list of projects is displayed.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <p>Hugo automatically selects the appropriate layout based on the content type and file structure.</p>
+
+    <h5>3. Public Folder</h5>
+    <p>
+        This is the final output of the Hugo site. You can see the files which were generated using
+        the content and layouts. Each one file represents a full HTML document.
+    </p>
+
+    <hr>
+
+    <h4>Tips for Managing Multiple Pages</h4>
+
+    <ol>
+        <li>
+            <strong>Use Front Matter</strong>: Add metadata to each page using front matter. For example:
+            <pre class="rounded"><code class="language-cs">title: "About Me"
+description: "Learn more about me."
+date: 2023-10-01</code></pre>
+
+            <p>
+                This metadata can be accessed in templates to dynamically render content. For example, in your
+                <code>head.html</code> partial:
+            </p>
+            <pre class="rounded"><code class="language-cs">&lt;head&gt;
+...
+&lt;title&gt;{{ .Params.title }}&lt;/title&gt;
+...&lt;/head&gt;</code></pre>
+        </li>
+
+        <li>
+            <strong>Navigation</strong>: Create a navigation menu in a partial (e.g., <code>partials/header.html</code>)
+            and include it in <code>baseof.html</code>:
+
+            <pre class="rounded"><code class="language-cs">&lt;nav&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;a href="{{ "/" | relURL }}"&gt;Home&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="{{ "about" | relURL }}"&gt;About&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="{{ "contact" | relURL }}"&gt;Contact&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/nav&gt;</code></pre>
+        </li>
+
+        <li><strong>Use Taxonomies</strong>: For blogs or categorized content, define taxonomies like <code>tags</code>
+            or
+            <code>categories</code> in <code>config.toml</code>:
+            <pre class="rounded"><code class="language-cs">---
+[taxonomies]
+tag = "tags"
+category = "categories"</code></pre>
+        </li>
+    </ol>
+
+    <hr>
+
+    <h4>Dynamic vs Static Content</h4>
+    <p>Understanding the difference between dynamic and static content is crucial:</p>
+    <ul>
+        <li>
+            <strong>Static Content</strong>: Files in the <code>static</code> folder are served as-is. Use this for
+            assets like images or CSS.
+        </li>
+        <li><strong>Dynamic Content</strong>: Use the <code>resources</code> folder for assets that need processing,
+            such as SCSS or resized images. For example:
+            <pre class="rounded"><code class="language-cs">{{ $style := resources.Get "scss/main.scss" | toCSS }}
+&lt;link rel="stylesheet" href="{{ $style.RelPermalink }}"&gt;</code></pre>
+        </li>
+    </ul>
+
+    <hr>
+
+    <h4>Final Thoughts</h4>
+    <p>
+        This guide is designed to help beginners get started with Hugo. As you explore, you’ll discover more features to
+        enhance your site. The key is to start simple, plan your structure, and build incrementally. Remember, this is
+        just the beginning. Happy building!
+    </p>
+
+    <p>Thank you…</p>
+
+    <hr class="my-4" />
+
+    <p><strong>Written On: July 25th, 2023</strong></p>
+</div>
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a class="text-reset" href="/">
+                <span class="fa fa-caret-left fa-1x"></span>
+                Back to Home
+            </a></li>
+    </ol>
+</nav>
