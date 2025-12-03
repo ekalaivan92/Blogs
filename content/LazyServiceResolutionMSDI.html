@@ -1,0 +1,269 @@
+---
+title: "Lazy service resolution in MSDI (Lazy<T> with DI)"
+description: "How to enable lazy resolution of services in Microsoft.Extensions.DependencyInjection using a small LazyInitializer wrapper and open-generic registration."
+author: "Ekalaivan Chidambaram"
+slug: "lazy-service-resolution-msdi"
+url: "lazy-service-resolution-msdi"
+icon: "/images/icon.jpg"
+aliases:
+  - "lazy-service-resolution-msdi.html"
+keywords:
+  - "MSDI"
+  - "dependency injection"
+  - "Lazy<T>"
+  - "lazy resolution"
+  - "dotnet"
+tags:
+  - "dependency injection"
+  - "MSDI"
+  - "performance"
+categories:
+  - "Programming"
+  - "Software Development"
+date: 2025-12-03T12:00:00+00:00
+lastmod: 2025-12-03T12:00:00+00:00
+draft: false
+---
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a class="text-reset" href="/">Home</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Lazy service resolution in MSDI</li>
+  </ol>
+</nav>
+
+<div class="page-body">
+
+  <h4 class="mt-3">Introduction</h4>
+
+  <p>
+    In typical dependency injection scenarios, services are constructed eagerly when a consumer requests them, or when the framework instantiates a controller or middleware. Sometimes this is wasteful: a dependency might be expensive to create, or only used in certain code paths that don't always execute. You might want to defer construction until the service is actually needed, without changing the clean constructor-injection pattern that makes testing and refactoring easy.
+  </p>
+
+  <p>
+    Unfortunately, Microsoft.Extensions.DependencyInjection (MSDI) doesn't provide built-in support for resolving services lazily via the common <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> wrapper out of the box. Fortunately, you can still achieve lazy resolution with a tiny helper type and an open-generic registration. This approach avoids creating the wrapped service until its value is actually accessed and integrates cleanly with scoped and transient lifetimes, letting you write code like <code class="bg-light px-1 rounded font-monospace">private readonly Lazy&lt;MyService&gt; _service</code> and have it just work.
+  </p>
+
+  <h4 class="mt-3">The helper type</h4>
+
+  <p>
+    Create a <code class="bg-light px-1 rounded font-monospace">LazyInitializer&lt;T&gt;</code> that inherits from <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> and uses the <code class="bg-light px-1 rounded font-monospace">IServiceProvider</code> to resolve the underlying service when needed. The DI container will inject the <code class="bg-light px-1 rounded font-monospace">IServiceProvider</code> into the wrapper's constructor, allowing the wrapper to defer calling <code class="bg-light px-1 rounded font-monospace">GetRequiredService&lt;T&gt;()</code> until someone accesses the <code class="bg-light px-1 rounded font-monospace">.Value</code> property.
+  </p>
+
+  <p>
+    The implementation below includes a factory method that captures the <code class="bg-light px-1 rounded font-monospace">IServiceProvider</code> and returns a lambda that will be called once, on first access to <code class="bg-light px-1 rounded font-monospace">.Value</code>. The simple console logging helps you understand the construction lifecycle and observe when lazy initialization happens. There is also a simpler commented-out version if you don't need logging or want to reduce indirection.
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code class="language-cs">public class LazyInitializer&lt;T&gt; : Lazy&lt;T&gt;
+    where T : class
+    {
+        /// Simpler version without logging
+        // public LazyInitializer(IServiceProvider serviceProvider)
+        // : base(() =&gt; serviceProvider.GetRequiredService&lt;T&gt;(), isThreadSafe: true)
+        // {
+        // }
+
+        public LazyInitializer(IServiceProvider serviceProvider)
+            : base(CreateValueFactory(serviceProvider), isThreadSafe: true)
+        {
+            Console.WriteLine($"LazyInitializer&lt;{typeof(T).Name}&gt; instantiated");
+        }
+
+        private static Func&lt;T&gt; CreateValueFactory(IServiceProvider serviceProvider)
+        {
+            return () =&gt;
+            {
+                Console.WriteLine($"LazyInitializer&lt;{typeof(T).Name}&gt; Value accessed");
+                return serviceProvider.GetRequiredService&lt;T&gt;();
+            };
+        }
+    }</code></pre>
+
+  <h4 class="mt-3">Registering the open-generic wrapper</h4>
+
+  <p>
+    Register the open-generic <code class="bg-light px-1 rounded font-monospace">LazyInitializer&lt;&gt;</code> so MSDI will provide <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> wherever it's requested. This registration should happen in your application startup configuration, typically in <code class="bg-light px-1 rounded font-monospace">Program.cs</code> (for minimal hosting) or in the <code class="bg-light px-1 rounded font-monospace">Startup.ConfigureServices</code> method (for traditional Startup pattern).
+  </p>
+
+    <pre lang="language-cs" class="rounded">
+    <code class="language-cs">builder.Services.AddTransient(typeof(Lazy&lt;&gt;), typeof(LazyInitializer&lt;&gt;));</code></pre>
+
+  <h4 class="mt-3">Simplifying with an extension method</h4>
+
+  <p>
+    To avoid repeating the registration line across multiple projects or to make the intent clearer, create a small extension method on <code class="bg-light px-1 rounded font-monospace">IServiceCollection</code>:
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code class="language-cs">public static class LazyResolutionExtensions
+    {
+        public static IServiceCollection AddLazyResolution(this IServiceCollection services)
+        {
+            services.AddTransient(typeof(Lazy&lt;&gt;), typeof(LazyInitializer&lt;&gt;));
+            return services;
+        }
+    }</code></pre>
+
+  <p>
+    Now you can simplify your startup configuration to a single readable line:
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code class="language-cs">builder.Services.AddLazyResolution();</code></pre>
+
+  <h4 class="mt-3">Example usage</h4>
+
+  <p>
+    Suppose you have a <code class="bg-light px-1 rounded font-monospace">DataGenerator</code> service that's relatively expensive to construct or you only want to create it when actually needed by a controller action. Register both the concrete service and the lazy resolution:
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code class="language-cs">var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddScoped&lt;DataGenerator&gt;();
+    builder.Services.AddTransient(typeof(Lazy&lt;&gt;), typeof(LazyInitializer&lt;&gt;));
+    // Or using the extension method:
+    // builder.Services.AddLazyResolution();
+    var app = builder.Build();</code></pre>
+
+  <p>
+    Now inject <code class="bg-light px-1 rounded font-monospace">Lazy&lt;DataGenerator&gt;</code> into a controller — the <code class="bg-light px-1 rounded font-monospace">DataGenerator</code> instance will not be created until you access <code class="bg-light px-1 rounded font-monospace">.Value</code>.
+  </p>
+
+  <pre lang="language-cs" class="rounded">
+    <code class="language-cs">public class WeatherForecastController : ControllerBase
+    {
+        private readonly Lazy&lt;DataGenerator&gt; _dataGenerator;
+
+        public WeatherForecastController(Lazy&lt;DataGenerator&gt; dataGenerator)
+        {
+            _dataGenerator = dataGenerator;
+            Console.WriteLine("WeatherForecastController instantiated");
+        }
+
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IEnumerable&lt;WeatherForecast&gt; Get(int count = 5)
+        {
+            Console.WriteLine("Get method called.");
+            return _dataGenerator.Value.Generate(count);
+        }
+    }</code></pre>
+
+  <h4 class="mt-3">Observed behavior (logs)</h4>
+
+  <p>
+    With the console logging in the <code class="bg-light px-1 rounded font-monospace">LazyInitializer</code> and controller constructor you should see output similar to:
+  </p>
+
+  <pre class="rounded">
+
+LazyInitializer&lt;DataGenerator&gt; instantiated
+WeatherForecastController instantiated
+Get method called.
+LazyInitializer&lt;DataGenerator&gt; Value accessed
+
+</pre>
+
+  <h4 class="mt-3">Why this works (and why MSDI doesn't do it by default)</h4>
+
+  <p>
+    The default Microsoft.Extensions.DependencyInjection container will only resolve types it knows how to construct. It understands concrete types, registered open-generics and factory delegates that you explicitly register. It does not have a built-in mapping for the CLR type <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code>, so asking the container for a <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> will fail unless you register how to create one. The small wrapper shown above tells the container how to create a <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> instance: construct the wrapper (which receives an <code class="bg-light px-1 rounded font-monospace">IServiceProvider</code>) and defer calling <code class="bg-light px-1 rounded font-monospace">GetRequiredService&lt;T&gt;()</code> until <code class="bg-light px-1 rounded font-monospace">.Value</code> is accessed.
+  </p>
+
+  <h4 class="mt-3">When to use this pattern</h4>
+
+  <p>
+    Use lazy resolution when the dependency is expensive to construct, rarely used during a request, or you want to avoid work when certain controller actions don't need the service. This keeps constructor signatures clean (you still use constructor injection) but defers the cost until truly required.
+  </p>
+
+  <h4 class="mt-3">Lifetime and registration rationale</h4>
+
+  <p>
+    The examples in this post register the wrapper as <code class="bg-light px-1 rounded font-monospace">Transient</code>. That is a safe default because it avoids accidentally turning a scoped service into an effectively singleton instance (the classic "captive dependency" problem). When the transient wrapper is injected into a scoped consumer (for example a controller during a request), the wrapper and the resolved inner service are created in the same request scope. Registering the wrapper as <code class="bg-light px-1 rounded font-monospace">Scoped</code> is also acceptable in many cases, but avoid registering the wrapper as <code class="bg-light px-1 rounded font-monospace">Singleton</code> if <code class="bg-light px-1 rounded font-monospace">T</code> or any of its dependencies are scoped.
+  </p>
+
+  <h4 class="mt-3">Thread-safety and ASP.NET Core concerns</h4>
+
+  <p>
+    The <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> base supports a thread-safety option (the example uses <code class="bg-light px-1 rounded font-monospace">isThreadSafe: true</code>). However, be careful: ASP.NET Core request-scoped services are typically not safe to use concurrently from multiple threads. If your lazy-initialized service performs thread-affine work or accesses context-specific state, prefer single-threaded initialization or keep <code class="bg-light px-1 rounded font-monospace">isThreadSafe</code> to the default that matches your usage. In most simple web request scenarios, the initialization happens on the request thread when you first access <code class="bg-light px-1 rounded font-monospace">.Value</code>, so it is not an issue — just be mindful if you plan to access the lazy value from background threads.
+  </p>
+
+  <h4 class="mt-3">Alternatives</h4>
+
+  <ul>
+    <li>
+      <strong>Factory delegate:</strong> Inject a factory like <code class="bg-light px-1 rounded font-monospace">Func&lt;T&gt;</code> that resolves <code class="bg-light px-1 rounded font-monospace">T</code> when invoked. This is explicit and simple to test.
+    </li>
+    <li>
+      <strong>IServiceProvider:</strong> Inject <code class="bg-light px-1 rounded font-monospace">IServiceProvider</code> and call <code class="bg-light px-1 rounded font-monospace">GetRequiredService&lt;T&gt;()</code> yourself. This is powerful but hides dependencies from constructors and is generally discouraged except for composition roots or factory components.
+    </li>
+    <li>
+      <strong>Manual Lazy:</strong> Construct a <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> in the consumer using a local factory that calls the container. This works but moves the wiring into the consumer and makes testing harder.
+    </li>
+  </ul>
+
+  <p>
+    Each alternative has trade-offs: <code class="bg-light px-1 rounded font-monospace">Func&lt;T&gt;</code> is explicit and testable, while a registered <code class="bg-light px-1 rounded font-monospace">LazyInitializer&lt;T&gt;</code> preserves the simple constructor shape and gives you the runtime laziness behaviour without scattering service-location code across the app.
+  </p>
+
+  <h4 class="mt-3">Notes and considerations</h4>
+
+  <ul>
+    <li>
+      Using <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> like this defers construction until needed, which can reduce unnecessary allocations and improve performance for infrequently used services.
+    </li>
+
+    <li>
+      Keep lifetime rules in mind: in the examples above the <code class="bg-light px-1 rounded font-monospace">LazyInitializer</code> is registered as <code class="bg-light px-1 rounded font-monospace">Transient</code>. When injected into a scoped consumer (for example a controller within a request), the transient wrapper and the resolved <code class="bg-light px-1 rounded font-monospace">T</code> are created within the same request scope. Choose <code class="bg-light px-1 rounded font-monospace">Transient</code> or <code class="bg-light px-1 rounded font-monospace">Scoped</code> depending on your needs, but avoid registering the wrapper as a <code class="bg-light px-1 rounded font-monospace">Singleton</code> when <code class="bg-light px-1 rounded font-monospace">T</code> or its dependencies are scoped to prevent captive dependency issues.
+    </li>
+
+    <li>
+      If you don't need the logging or factory indirection, a simpler implementation is possible using <code class="bg-light px-1 rounded font-monospace">base(() =&gt; serviceProvider.GetRequiredService&lt;T&gt;(), isThreadSafe:true)</code> in the constructor.
+    </li>
+
+    <li>
+      This pattern is lightweight and works with the default MSDI container; no third-party DI container is required.
+    </li>
+  </ul>
+
+  <h4 class="mt-3">Performance impact</h4>
+
+  <p>
+    <strong>Constructor time:</strong> Using <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> shifts initialization cost. The wrapper itself is cheap to construct (just a closure over the <code class="bg-light px-1 rounded font-monospace">IServiceProvider</code>), so controllers and other consumers instantiate faster. You pay no cost until <code class="bg-light px-1 rounded font-monospace">.Value</code> is accessed.
+  </p>
+
+  <p>
+    <strong>First access:</strong> When you first call <code class="bg-light px-1 rounded font-monospace">.Value</code>, the <code class="bg-light px-1 rounded font-monospace">LazyInitializer</code> calls <code class="bg-light px-1 rounded font-monospace">GetRequiredService&lt;T&gt;()</code>. This has the same cost as direct injection — there is no magic or caching overhead, just deferred timing. Subsequent accesses return the cached instance at virtually zero cost (a property read and a null check).
+  </p>
+
+  <p>
+    <strong>Memory:</strong> The wrapper adds a small per-instance overhead (the closure and the <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> state object), but this is negligible in most scenarios. The real memory win comes from not constructing expensive services until you actually need them.
+  </p>
+
+  <p>
+    <strong>Bottom line:</strong> Lazy resolution is worthwhile when the service is genuinely expensive or rarely used. For lightweight, frequently-accessed services, the overhead of the wrapper may outweigh the benefit — measure in your own application to decide.
+  </p>
+
+  <h4 class="mt-3">Summary</h4>
+
+  <p>
+    Adding a small <code class="bg-light px-1 rounded font-monospace">LazyInitializer&lt;T&gt;</code> and registering it as an open-generic service lets you inject <code class="bg-light px-1 rounded font-monospace">Lazy&lt;T&gt;</code> across your application and obtain true lazy resolution behavior with MSDI. It's handy for expensive or rarely-used services and fits naturally into existing DI registrations.
+  </p>
+
+  <hr class="my-4" />
+
+  <p>
+    <em>Written On: </em><em><strong>Dec 03, 2025</strong></em>
+  </p>
+</div>
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a class="text-reset" href="/">
+        <span class="fa fa-caret-left fa-1x"></span>
+        Back to Home
+        </a></li>
+    </ol>
+</nav>
