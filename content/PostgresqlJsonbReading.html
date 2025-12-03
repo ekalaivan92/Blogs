@@ -43,7 +43,7 @@ categories:
 
 <div class="page-body">
 
-  <h2 class="mt-3">Introduction</h2>
+  <h4 class="mt-3">Introduction</h4>
   
   <p>
     As we are writing business / utility applications sometimes we need to 
@@ -52,7 +52,7 @@ categories:
     data inside postgresql database.
   </p>
   
-  <h2 class="mt-3">What is JSON / JSONB in PostgreSQL</h2>
+  <h4 class="mt-3">What is JSON / JSONB in PostgreSQL</h4>
   
   <p>
     It is a datatype, a representation of JSON data in the
@@ -72,7 +72,7 @@ categories:
     database.
   </p>
   
-  <h3 class="mt-3">JSONB with Dapper</h3>
+  <h4 class="mt-3">JSONB with Dapper</h4>
  
   <p>
     using JSONB directly because it is more advanced then JSON in
@@ -91,7 +91,7 @@ categories:
     <a href="https://medium.com/dapper-net/custom-type-handling-4b447b97c620">this blog</a>.
   </p>
 
-  <h3 class="mt-3"><strong>What is Type Handlers</strong></h3>
+  <h4 class="mt-3"><strong>What is Type Handlers</strong></h4>
   
   <p>
     This is a concept given by Dapper to handle custom types, Type
@@ -99,7 +99,7 @@ categories:
     types like class, dictionary, etc.
   </p>
 
-  <h3 class="mt-3">Defining Type Handler</h3>
+  <h4 class="mt-3">Defining Type Handler</h4>
   
   <p>
     To define the type handler we have to inherit base class
@@ -295,7 +295,7 @@ var query = &quot;select (paymentgatewayresponse -&gt;&gt; &#x27;PaidAmount&#x27
 dbConnectionInstance.Query&lt;decimal&gt;(query)</code>
   </pre>
 
-  <h3 class="mt-3">Reading the JSONB into Dictionary</h3>
+  <h4 class="mt-3">Reading the JSONB into Dictionary</h4>
 
   <p>
     This is only possible to have when we have a type that
@@ -308,7 +308,7 @@ dbConnectionInstance.Query&lt;decimal&gt;(query)</code>
 SqlMapper.AddTypeHandler(typeof(Dictionary&lt;string, string&gt;), new Dictionary&lt;string, string&gt;());</code>
   </pre>
   
-  <h3 class="mt-3">Conclusion</h3>
+  <h4 class="mt-3">Conclusion</h4>
 
   <p>
     Here I have explained about how I solved my problem of reading
@@ -319,7 +319,7 @@ SqlMapper.AddTypeHandler(typeof(Dictionary&lt;string, string&gt;), new Dictionar
     stored in the column.
   </p>
 
-  <h3 class="mt-3">Nuget</h3>
+  <h4 class="mt-3">Nuget</h4>
 
   <p>
     From this understanding i have developed a library and released it in Nuget.

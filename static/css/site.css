@@ -64,3 +64,8 @@ pre
 ::-webkit-scrollbar-thumb:active {
   background: rgba(0, 0, 0, .9);
 }
+
+.breadcrumb {
+  font-size: 1rem;
+  font-style: italic;
+}
