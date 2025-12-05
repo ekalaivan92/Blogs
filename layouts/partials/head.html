@@ -4,40 +4,58 @@
 
     <title>Ekalaivan Chidambaram Blogs - {{ .Params.title }}</title>
 
-    <meta key="description" content="{{ .Params.description }}" />
+    <meta name="description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}" />
     {{ with .Params.keywords }}<meta name="keywords" content="{{ delimit . " ," }}" />{{ end }}
     <meta name="author" content="Ekalaivan Chidambaram">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="{{ if or .Draft .Params.draft }}noindex, follow{{ else }}index, follow{{ end }}">
 
+    {{ if eq .Kind "home" }}
+    <meta property="og:title" content="Ekalaivan Chidambaram - Developer Blog">
+    <meta property="og:description" content="Explore expert insights, tutorials, and tips on .NET Full Stack Development, including ASP.NET Core, Blazor, Postgresql, and more.">
+    <meta property="og:url" content="{{ .Permalink }}">
+    <meta property="og:type" content="website">
+    {{ else }}
     <meta property="og:title" content="{{ .Params.title }} - Ekalaivan Chidambaram Blogs">
     <meta property="og:description" content="{{ .Params.description }}">
-    <meta property="og:url" content="https://blogs.ekalaivan.net/{{ .Params.url }}">
+    <meta property="og:url" content="{{ .Permalink }}">
     <meta property="og:type" content="article">
+    {{ end }}
     <meta property="og:image" content="https://blogs.ekalaivan.net/images/icon.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <meta name="twitter:card" content="summary_large_image">
+    {{ if eq .Kind "home" }}
+    <meta name="twitter:title" content="Ekalaivan Chidambaram - Developer Blog">
+    <meta name="twitter:description" content="Explore expert insights, tutorials, and tips on .NET Full Stack Development, including ASP.NET Core, Blazor, Postgresql, and more.">
+    {{ else }}
     <meta name="twitter:title" content="{{ .Params.title }} - Ekalaivan Chidambaram Blogs">
     <meta name="twitter:description" content="{{ .Params.description }}">
+    {{ end }}
     <meta name="twitter:image" content="https://blogs.ekalaivan.net/images/icon.jpg">
+    <meta name="twitter:site" content="@kalaiekalai">
+    <meta name="twitter:creator" content="@kalaiekalai">
+    <meta name="twitter:image:alt" content="Ekalaivan Chidambaram Blogs">
 
-    <link rel="canonical" href="https://blogs.ekalaivan.net/{{ .Params.url }}">
+    <link rel="canonical" href="{{ .Permalink }}">
 
-    <link rel="icon" type="text/image" href="{{ .Params.icon }}" />
+    <link rel="icon" type="image/jpeg" href="{{ .Params.icon }}" />
 
-    <!-- Link to robots.txt -->
-    <link rel="robots" href="/robots.txt">
+    <!-- Note: robots.txt and sitemap are served from the site root and declared in robots.txt; rel=robots/rel=sitemap tags are optional and removed for a smaller head. -->
 
-    <!-- Link to sitemap -->
-    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+    <meta property="og:site_name" content="Ekalaivan Chidambaram Blogs">
+    <meta property="og:locale" content="en_US">
+    <link rel="alternate" href="{{ .Permalink }}" hreflang="en-US" />
 
-    <!-- Structured Data -->
+    <!-- Structured Data: Emit BlogPosting only for posts, keep WebSite JSON-LD site-level -->
+    {{ if eq .Params.type "post" }}
     <script type="application/ld+json">
         {
             "@context": "https://schema.org",
             "@type": "BlogPosting",
             "mainEntityOfPage": {
                 "@type": "WebPage",
-                "@id": "https://blogs.ekalaivan.net{{ .Permalink }}"
+                "@id": "{{ .Permalink }}"
             },
             "headline": "{{ .Title }}",
             "description": "{{ .Params.description }}",
@@ -58,8 +76,9 @@
             "dateModified": "{{ .Lastmod }}"
         }
     </script>
+    {{ end }}
 
-    <!-- Structured Data for Subdomain Relationship -->
+    <!-- Site-level structured data -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
